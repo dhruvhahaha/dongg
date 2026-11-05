@@ -1,0 +1,655 @@
+<!doctype html> <!--site-only-->
+<html lang="en"> <!--site-only-->
+<head> <!--site-only-->
+<meta charset="utf-8"> <!--site-only-->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"> <!--site-only-->
+<title>Dongg</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Quick dong to rupee converter for the Vietnam trip: drop three zeros, multiply by four.">
+<meta name="theme-color" content="#0E3A2D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dongg">
+<link rel="manifest" href="manifest.webmanifest"> <!--site-only-->
+<link rel="icon" href="icon.svg" type="image/svg+xml"> <!--site-only-->
+<link rel="apple-touch-icon" href="icon-192.png"> <!--site-only-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow phone column. Price entry, then a deep-green result slab, then banknote keys, the spend log, the cheat sheet and the rule. */
+:root {
+  --bg: #EDF2EE;
+  --surface: #FFFFFF;
+  --ink: #13211A;
+  --muted: #56675E;
+  --line: #D3DCD5;
+  --red: #C42B20;
+  --red-ink: #FFFFFF;
+  --slab: #0E3A2D;
+  --slab-ink: #F1F6F1;
+  --slab-dim: #A2BFB2;
+  --gold: #FFC93C;
+
+  /* banknote colours, used only as swatches */
+  --n1k: #9C7B4F; --n2k: #8A7666; --n5k: #5E5A9E;
+  --n10k: #C9A043; --n20k: #3D76B8; --n50k: #C64F8A;
+  --n100k: #4E9A55; --n200k: #C9623F; --n500k: #2A9CB4;
+
+  --font-display: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1310; --surface: #131D18; --ink: #E5ECE6; --muted: #93A39A; --line: #26352D;
+    --red: #F0604F; --red-ink: #1A0806;
+    --slab: #174A3A; --slab-ink: #F1F6F1; --slab-dim: #A9C6B9; --gold: #FFD35C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1310; --surface: #131D18; --ink: #E5ECE6; --muted: #93A39A; --line: #26352D;
+  --red: #F0604F; --red-ink: #1A0806;
+  --slab: #174A3A; --slab-ink: #F1F6F1; --slab-dim: #A9C6B9; --gold: #FFD35C;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* header */
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+  display: flex; align-items: center; gap: 8px;
+}
+.mark {
+  display: inline-grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 10px;
+  background: var(--slab); color: var(--gold);
+  font-size: 1.2rem; font-weight: 800;
+}
+.tag { margin: 0; color: var(--muted); font-size: 0.875rem; }
+
+h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-wrap: balance;
+}
+
+/* mode switch */
+.modes {
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px; gap: 4px;
+}
+.mode {
+  border: 0; background: transparent; border-radius: 999px;
+  padding: 10px 12px; font-weight: 700; color: var(--muted);
+}
+.mode[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* entry */
+.entry { display: flex; flex-direction: column; gap: 8px; }
+.entry label { font-weight: 700; font-size: 0.875rem; }
+.field {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--r);
+  padding: 6px 6px 6px 16px;
+}
+.field:focus-within { border-color: var(--ink); }
+.unit { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; color: var(--muted); }
+#amt {
+  flex: 1; min-width: 0;
+  border: 0; background: transparent; outline: none;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 1.75rem; letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  padding: 6px 0;
+}
+.key {
+  flex: none;
+  border: 1px solid var(--line); background: var(--bg);
+  border-radius: 10px; height: 44px; min-width: 44px; padding: 0 10px;
+  font-family: var(--font-mono); font-weight: 500; font-size: 0.95rem;
+}
+.key:active { transform: translateY(1px); }
+.hint { margin: 0; color: var(--muted); font-size: 0.8125rem; }
+.hint code { font-family: var(--font-mono); font-size: 0.8125rem; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px; }
+
+/* result slab */
+.slab {
+  background: var(--slab); color: var(--slab-ink);
+  border-radius: 20px;
+  padding: 22px 20px 18px;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; overflow: hidden;
+}
+.slab::after {
+  /* faint guilloche-style rings, a nod to banknote printing */
+  content: ""; position: absolute; right: -60px; top: -60px;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0 9px, color-mix(in srgb, var(--slab-ink) 7%, transparent) 9px 10px);
+  pointer-events: none;
+}
+.slab-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slab-dim); }
+.big {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(2.75rem, 14vw, 4.25rem);
+  line-height: 1; letter-spacing: -0.04em;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  position: relative; z-index: 1;
+}
+.big.bump { animation: bump .22s ease-out; }
+@keyframes bump { from { transform: scale(1.04); } to { transform: none; } }
+.work {
+  font-family: var(--font-mono); font-size: 0.95rem;
+  color: var(--slab-ink);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px;
+  overflow-wrap: anywhere; position: relative; z-index: 1;
+}
+.work s { color: var(--slab-dim); text-decoration-thickness: 2px; text-decoration-color: var(--gold); }
+.work .op { color: var(--slab-dim); }
+.work .times { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); border-radius: 6px; padding: 0 6px; }
+.real {
+  font-size: 0.8125rem; color: var(--slab-dim);
+  border-top: 1px solid color-mix(in srgb, var(--slab-ink) 16%, transparent);
+  padding-top: 10px; position: relative; z-index: 1;
+}
+
+/* banknotes */
+.notes { display: flex; flex-direction: column; gap: 10px; }
+.notes-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.notes-head span { font-size: 0.8125rem; color: var(--muted); }
+.note-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.note {
+  position: relative;
+  border: 1px solid var(--line); background: var(--surface);
+  border-radius: 10px; padding: 14px 8px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  overflow: hidden;
+}
+.note::before { content: ""; position: absolute; inset: 0 0 auto; height: 6px; background: var(--c); }
+.note b { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; letter-spacing: -0.02em; }
+.note small { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.note:active { background: color-mix(in srgb, var(--c) 14%, var(--surface)); }
+
+/* panels */
+.panel {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.total { text-align: right; }
+.total b { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.total small { display: block; font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+
+.log-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.log-form input {
+  flex: 1 1 160px; min-width: 0;
+  border: 1px solid var(--line); background: var(--bg);
+  border-radius: 10px; padding: 10px 12px;
+}
+.btn-add {
+  flex: none; border: 0; border-radius: 10px;
+  background: var(--red); color: var(--red-ink);
+  font-weight: 700; padding: 10px 16px;
+  font-variant-numeric: tabular-nums;
+}
+.btn-add:disabled { opacity: .45; cursor: default; }
+
+.log-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.log-list li {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 4px 12px; align-items: center;
+  padding: 10px 0; border-top: 1px solid var(--line);
+}
+.log-list li:first-child { border-top: 0; }
+.li-what { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.li-what small { display: block; color: var(--muted); font-size: 0.75rem; font-weight: 400; }
+.li-amt { text-align: right; font-variant-numeric: tabular-nums; }
+.li-amt b { font-weight: 700; }
+.li-amt small { display: block; font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.li-del { border: 0; background: transparent; color: var(--muted); width: 36px; height: 36px; border-radius: 8px; font-size: 1.25rem; line-height: 1; }
+.li-del:hover { background: var(--bg); color: var(--ink); }
+.empty { margin: 0; color: var(--muted); font-size: 0.875rem; padding: 4px 0; }
+.log-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.log-foot p { margin: 0; font-size: 0.75rem; color: var(--muted); }
+.ghost { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 0.8125rem; color: var(--muted); }
+.ghost.armed { border-color: var(--red); color: var(--red); font-weight: 700; }
+
+/* cheat sheet */
+.ref-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--muted); padding: 0 0 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+th.num, td.num { text-align: right; }
+td { border-top: 1px solid var(--line); padding: 0; }
+.ref-row { cursor: pointer; }
+.ref-row:hover td { background: var(--bg); }
+td .cell { display: block; padding: 9px 0; }
+td.num .cell { padding-left: 12px; }
+.viet { font-weight: 600; }
+.eng { display: block; font-size: 0.75rem; color: var(--muted); }
+.mono { font-family: var(--font-mono); font-size: 0.875rem; }
+.ref-note { margin: 0; font-size: 0.75rem; color: var(--muted); }
+
+/* rule */
+.rule-eq {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+  font-family: var(--font-mono); font-size: 1.05rem;
+  background: var(--slab); color: var(--slab-ink);
+  border-radius: 10px; padding: 12px 14px;
+}
+.rule-eq s { color: var(--slab-dim); text-decoration-thickness: 2px; text-decoration-color: var(--gold); }
+.rule-eq .op { color: var(--slab-dim); }
+.rule-eq .times { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); border-radius: 6px; padding: 0 6px; }
+.rule-eq b { font-family: var(--font-display); font-weight: 800; color: var(--gold); }
+.rule p { margin: 0; font-size: 0.875rem; color: var(--muted); max-width: 62ch; }
+.rule p strong { color: var(--ink); }
+
+footer { text-align: center; font-size: 0.75rem; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .big.bump { animation: none; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head> <!--site-only-->
+<body> <!--site-only-->
+<main class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true">₫</span>Dongg</div>
+    <p class="tag">Drop three zeros, times four.</p>
+  </header>
+
+  <div class="modes" role="group" aria-label="Conversion direction">
+    <button id="mode-vnd" class="mode" type="button" aria-pressed="true">₫ dong → ₹ rupees</button>
+    <button id="mode-inr" class="mode" type="button" aria-pressed="false">₹ rupees → ₫ dong</button>
+  </div>
+
+  <section class="entry">
+    <label for="amt" id="amt-label">Price in dong</label>
+    <div class="field">
+      <span class="unit" id="amt-unit" aria-hidden="true">₫</span>
+      <input id="amt" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="100000" aria-describedby="hint">
+      <button id="zeros" class="key" type="button" aria-label="Add three zeros">000</button>
+      <button id="clear" class="key" type="button" aria-label="Clear amount">C</button>
+    </div>
+    <p class="hint" id="hint">Shortcuts work too: <code>100k</code>, <code>1.5tr</code>, <code>1tr5</code></p>
+  </section>
+
+  <section class="slab" aria-live="polite">
+    <div class="slab-label" id="slab-label">You're spending about</div>
+    <div class="big" id="big">₹400</div>
+    <div class="work" id="work"></div>
+    <div class="real" id="real"></div>
+  </section>
+
+  <section class="notes" id="notes">
+    <div class="notes-head">
+      <h2>Count notes</h2>
+      <span>Tap to add to the amount</span>
+    </div>
+    <div class="note-grid" id="note-grid"></div>
+  </section>
+
+  <section class="panel log">
+    <div class="panel-head">
+      <h2>My spend log</h2>
+      <div class="total"><b id="total-inr">₹0</b><small id="total-vnd">0 ₫</small></div>
+    </div>
+    <form class="log-form" id="log-form">
+      <input id="what" type="text" autocomplete="off" placeholder="What was it? (optional)" maxlength="60" aria-label="What was it">
+      <button class="btn-add" id="add" type="submit">Add ₹400</button>
+    </form>
+    <ul class="log-list" id="log-list"></ul>
+    <p class="empty" id="empty">Nothing logged yet. Convert a price above, then tap Add to keep a running total.</p>
+    <div class="log-foot">
+      <p>Saved on this phone only.</p>
+      <button class="ghost" id="clear-log" type="button" hidden>Clear log</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Street price cheat sheet</h2>
+    <div class="ref-table-wrap">
+      <table>
+        <thead><tr><th>Item</th><th class="num">Dong</th><th class="num">Rupees</th></tr></thead>
+        <tbody id="ref-body"></tbody>
+      </table>
+    </div>
+    <p class="ref-note">Typical prices, roughly. Tourist spots charge more. Tap a row to load it.</p>
+  </section>
+
+  <section class="panel rule">
+    <h2>The rule</h2>
+    <div class="rule-eq" aria-label="100,000 dong: drop three zeros, times 4, equals 400 rupees">
+      <span>100.<s>000</s> ₫</span><span class="op">→</span><span>100</span><span class="times">× 4</span><span class="op">=</span><b>₹400</b>
+    </div>
+    <p>Everyone uses the same ×4, so your numbers match when you compare. The real rate in late October 2026 was about <strong>₹1 = 273 ₫</strong>, which works out to ×3.66. So ×4 runs about 9% high. That's a handy buffer: what you actually pay is usually a bit less than Dongg says.</p>
+  </section>
+
+  <footer>Made for the Vietnam trip. Works offline once it has loaded.</footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var REAL_VND_PER_INR = 273; // late Oct 2026
+  var RATE = 4; // the group rule: drop 000, times 4. Fixed so everyone's numbers match.
+
+  var NOTES = [
+    { v: 1000, c: "--n1k" }, { v: 2000, c: "--n2k" }, { v: 5000, c: "--n5k" },
+    { v: 10000, c: "--n10k" }, { v: 20000, c: "--n20k" }, { v: 50000, c: "--n50k" },
+    { v: 100000, c: "--n100k" }, { v: 200000, c: "--n200k" }, { v: 500000, c: "--n500k" }
+  ];
+  var REF = [
+    ["Trà đá", "Iced tea at a street stall", 5000],
+    ["Nước suối", "Bottle of water", 10000],
+    ["Bia hơi", "Glass of fresh draught beer", 15000],
+    ["Cà phê sữa đá", "Iced milk coffee", 25000],
+    ["Bánh mì", "Stuffed baguette", 30000],
+    ["Grab bike", "Short scooter ride", 30000],
+    ["Phở / Bún chả", "Bowl at a local place", 50000],
+    ["Cocktail", "Rooftop or bar", 150000],
+    ["Massage", "One hour, foot or body", 300000],
+    ["Hotel night", "Mid-range room", 800000]
+  ];
+
+  function $(id) { return document.getElementById(id); }
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var mode = store.get("dongg.mode", "vnd") === "inr" ? "inr" : "vnd";
+  var rate = RATE;
+  try { localStorage.removeItem("dongg.rate"); } catch (e) {}
+  var log = store.get("dongg.log", []);
+  if (!Array.isArray(log)) log = [];
+  var current = { vnd: 0, inr: 0 };
+
+  // ---------- formatting ----------
+  function fmtVndNum(n) { return Math.round(n).toLocaleString("vi-VN"); } // 100.000, as on price tags
+  function fmtVnd(n) { return fmtVndNum(n) + " ₫"; }
+  function fmtInr(n) {
+    if (n > 0 && n < 1) return "under ₹1";
+    return "₹" + Math.round(n).toLocaleString("en-IN"); // 1,20,000 Indian grouping
+  }
+  function fmtNum(n) { return Number(n.toFixed(2)).toLocaleString("en-IN", { maximumFractionDigits: 2 }); }
+  function vndToInr(vnd) { return vnd / 1000 * rate; }
+  function roundDong(d) { return d >= 1000 ? Math.round(d / 1000) * 1000 : Math.round(d / 100) * 100; }
+
+  // ---------- parsing ----------
+  // "100000", "100.000", "100,000", "100k", "1.5tr", "1tr5", "2m"
+  function parseVnd(raw) {
+    var s = String(raw).toLowerCase().replace(/\s+/g, "").replace(/₫|đ|vnd|dong|đồng/g, "");
+    if (!s) return 0;
+    var m = s.match(/^(\d+)(tr|m)(\d+)$/); // 1tr5 = 1.5 million
+    if (m) return Math.round(parseFloat(m[1] + "." + m[3]) * 1e6);
+    var mult = 1;
+    var suf = s.match(/(k|nghìn|nghin|tr|triệu|trieu|m)$/);
+    if (suf) {
+      mult = /^(k|ngh)/.test(suf[1]) ? 1e3 : 1e6;
+      s = s.slice(0, -suf[1].length).replace(",", ".");
+      if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, "");
+    } else {
+      s = s.replace(/[.,]/g, "");
+    }
+    var n = parseFloat(s);
+    return isFinite(n) && n > 0 ? Math.round(n * mult) : 0;
+  }
+  function parseInr(raw) {
+    var s = String(raw).toLowerCase().replace(/\s+/g, "").replace(/₹|rs\.?|inr|rupees?/g, "").replace(/,/g, "");
+    var mult = 1;
+    if (/k$/.test(s)) { mult = 1e3; s = s.slice(0, -1); }
+    var n = parseFloat(s);
+    return isFinite(n) && n > 0 ? n * mult : 0;
+  }
+
+  // ---------- render: converter ----------
+  var bigEl = $("big"), workEl = $("work"), realEl = $("real");
+  var lastBig = "";
+
+  function span(cls, text) { var e = document.createElement("span"); if (cls) e.className = cls; e.textContent = text; return e; }
+
+  function render() {
+    var raw = $("amt").value;
+    workEl.textContent = "";
+    if (mode === "vnd") {
+      var d = parseVnd(raw);
+      current = { vnd: d, inr: vndToInr(d) };
+      $("slab-label").textContent = "You're spending about";
+      setBig(d ? fmtInr(current.inr) : "₹0");
+      if (!d) {
+        workEl.appendChild(span("op", "Type a price in dong"));
+        realEl.textContent = "Example: 100.000 ₫ → drop 000 → 100 × 4 = ₹400";
+      } else {
+        var vi = fmtVndNum(d);
+        var first = document.createElement("span");
+        if (/\.000$/.test(vi)) {
+          first.appendChild(document.createTextNode(vi.slice(0, -4)));
+          var s = document.createElement("s"); s.textContent = ".000"; first.appendChild(s);
+        } else {
+          first.textContent = vi;
+        }
+        first.appendChild(document.createTextNode(" ₫"));
+        workEl.appendChild(first);
+        workEl.appendChild(span("op", "→"));
+        workEl.appendChild(span("", fmtNum(d / 1000)));
+        workEl.appendChild(span("times", "× " + fmtNum(rate)));
+        realEl.textContent = "At the real rate it's closer to " + fmtInr(d / REAL_VND_PER_INR) + ".";
+      }
+    } else {
+      var r = parseInr(raw);
+      var dd = r / rate * 1000;
+      current = { vnd: roundDong(dd), inr: r };
+      $("slab-label").textContent = "That gets you about";
+      setBig(r ? fmtVnd(current.vnd) : "0 ₫");
+      if (!r) {
+        workEl.appendChild(span("op", "Type an amount in rupees"));
+        realEl.textContent = "Example: ₹1,000 ÷ 4 = 250 → add 000 → 250.000 ₫";
+      } else {
+        workEl.appendChild(span("", fmtInr(r)));
+        workEl.appendChild(span("times", "÷ " + fmtNum(rate)));
+        workEl.appendChild(span("op", "="));
+        workEl.appendChild(span("", fmtNum(r / rate)));
+        workEl.appendChild(span("op", "→ add 000"));
+        realEl.textContent = "At the real rate, " + fmtInr(r) + " is about " + fmtVnd(roundDong(r * REAL_VND_PER_INR)) + ".";
+      }
+    }
+    var add = $("add");
+    var ok = current.vnd > 0;
+    add.disabled = !ok;
+    add.textContent = ok ? "Add " + fmtInr(vndToInr(current.vnd)) : "Add";
+  }
+
+  function setBig(text) {
+    bigEl.textContent = text;
+    if (text !== lastBig) {
+      bigEl.classList.remove("bump"); void bigEl.offsetWidth; bigEl.classList.add("bump");
+      lastBig = text;
+    }
+  }
+
+  function setMode(m, keepValue) {
+    mode = m;
+    store.set("dongg.mode", m);
+    $("mode-vnd").setAttribute("aria-pressed", String(m === "vnd"));
+    $("mode-inr").setAttribute("aria-pressed", String(m === "inr"));
+    $("amt-unit").textContent = m === "vnd" ? "₫" : "₹";
+    $("amt-label").textContent = m === "vnd" ? "Price in dong" : "Amount in rupees";
+    $("hint").hidden = m !== "vnd";
+    $("zeros").hidden = m !== "vnd";
+    $("notes").hidden = m !== "vnd";
+    if (!keepValue) $("amt").value = m === "vnd" ? "100000" : "1000";
+    render();
+  }
+
+  // ---------- notes ----------
+  var grid = $("note-grid");
+  NOTES.forEach(function (n) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "note";
+    b.style.setProperty("--c", "var(" + n.c + ")");
+    var label = n.v >= 1000 ? (n.v / 1000) + "k" : String(n.v);
+    var big = document.createElement("b"); big.textContent = label;
+    var sm = document.createElement("small"); sm.textContent = "= " + fmtInr(vndToInr(n.v));
+    b.appendChild(big); b.appendChild(sm);
+    b.setAttribute("aria-label", "Add " + fmtVnd(n.v));
+    b.addEventListener("click", function () {
+      var now = parseVnd($("amt").value);
+      $("amt").value = String(now + n.v);
+      render();
+    });
+    grid.appendChild(b);
+  });
+
+  // ---------- cheat sheet ----------
+  var refBody = $("ref-body");
+  function renderRef() {
+    refBody.textContent = "";
+    REF.forEach(function (row) {
+      var tr = document.createElement("tr"); tr.className = "ref-row"; tr.tabIndex = 0;
+      var td1 = document.createElement("td");
+      var c1 = span("cell", ""); c1.appendChild(span("viet", row[0])); c1.appendChild(span("eng", row[1])); td1.appendChild(c1);
+      var td2 = document.createElement("td"); td2.className = "num"; td2.appendChild(span("cell mono", fmtVndNum(row[2])));
+      var td3 = document.createElement("td"); td3.className = "num"; td3.appendChild(span("cell", fmtInr(vndToInr(row[2]))));
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+      function load() {
+        if (mode !== "vnd") setMode("vnd", true);
+        $("amt").value = String(row[2]);
+        $("what").value = row[0];
+        render();
+        var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+      }
+      tr.addEventListener("click", load);
+      tr.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); load(); } });
+      refBody.appendChild(tr);
+    });
+  }
+
+  // ---------- spend log ----------
+  var listEl = $("log-list");
+  function saveLog() { store.set("dongg.log", log); }
+  function fmtWhen(t) {
+    try { return new Date(t).toLocaleString("en-IN", { weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }); }
+    catch (e) { return ""; }
+  }
+  function renderLog() {
+    listEl.textContent = "";
+    var total = 0;
+    log.slice().reverse().forEach(function (item) {
+      total += item.vnd;
+      var li = document.createElement("li");
+      var w = span("li-what", item.what || "Something");
+      var when = document.createElement("small"); when.textContent = fmtWhen(item.t); w.appendChild(when);
+      var a = span("li-amt", "");
+      var b = document.createElement("b"); b.textContent = fmtInr(vndToInr(item.vnd));
+      var sm = document.createElement("small"); sm.textContent = fmtVnd(item.vnd);
+      a.appendChild(b); a.appendChild(sm);
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "li-del"; del.textContent = "×";
+      del.setAttribute("aria-label", "Remove " + (item.what || "item"));
+      del.addEventListener("click", function () {
+        log = log.filter(function (x) { return x.id !== item.id; });
+        saveLog(); renderLog();
+      });
+      li.appendChild(w); li.appendChild(a); li.appendChild(del);
+      listEl.appendChild(li);
+    });
+    $("total-inr").textContent = fmtInr(vndToInr(total)).replace("under ", "");
+    $("total-vnd").textContent = fmtVnd(total);
+    $("empty").hidden = log.length > 0;
+    $("clear-log").hidden = log.length === 0;
+  }
+
+  $("log-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!(current.vnd > 0)) return;
+    log.push({ id: Date.now() + "-" + Math.random().toString(36).slice(2, 7), what: $("what").value.trim(), vnd: current.vnd, t: Date.now() });
+    saveLog(); renderLog();
+    $("what").value = "";
+  });
+
+  var armTimer = null;
+  $("clear-log").addEventListener("click", function () {
+    var btn = this;
+    if (btn.classList.contains("armed")) {
+      clearTimeout(armTimer);
+      log = []; saveLog(); renderLog();
+      btn.classList.remove("armed"); btn.textContent = "Clear log";
+      return;
+    }
+    btn.classList.add("armed"); btn.textContent = "Tap again to clear all";
+    armTimer = setTimeout(function () { btn.classList.remove("armed"); btn.textContent = "Clear log"; }, 3000);
+  });
+
+  // ---------- input wiring ----------
+  $("amt").addEventListener("input", render);
+  $("amt").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("amt").blur(); } });
+  function keepFocus(e) { e.preventDefault(); }
+  ["zeros", "clear"].forEach(function (id) {
+    $(id).addEventListener("mousedown", keepFocus);
+    $(id).addEventListener("touchstart", keepFocus, { passive: false });
+  });
+  $("zeros").addEventListener("click", function () {
+    var v = $("amt").value.trim();
+    $("amt").value = (v === "" ? "1" : v) + "000";
+    render();
+  });
+  $("zeros").addEventListener("touchend", function (e) { e.preventDefault(); this.click(); });
+  $("clear").addEventListener("click", function () { $("amt").value = ""; render(); $("amt").focus(); });
+  $("clear").addEventListener("touchend", function (e) { e.preventDefault(); this.click(); });
+  $("mode-vnd").addEventListener("click", function () { if (mode !== "vnd") setMode("vnd"); });
+  $("mode-inr").addEventListener("click", function () { if (mode !== "inr") setMode("inr"); });
+
+  // ---------- boot ----------
+  renderRef();
+  renderLog();
+  setMode(mode);
+
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+})();
+</script>
+</body> <!--site-only-->
+</html> <!--site-only-->
