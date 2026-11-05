@@ -1,5 +1,5 @@
 // Network first, cache fallback, so the app keeps working with patchy data.
-const CACHE = "dongg-v1";
+const CACHE = "dongg-v2";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {

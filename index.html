@@ -270,13 +270,16 @@ td.num .cell { padding-left: 12px; }
 .ref-note { margin: 0; font-size: 0.75rem; color: var(--muted); }
 
 /* rule */
-.rule-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.rule-row label { font-weight: 600; }
-#rate {
-  width: 84px; border: 2px solid var(--line); background: var(--bg);
-  border-radius: 10px; padding: 8px 10px;
-  font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; text-align: center;
+.rule-eq {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+  font-family: var(--font-mono); font-size: 1.05rem;
+  background: var(--slab); color: var(--slab-ink);
+  border-radius: 10px; padding: 12px 14px;
 }
+.rule-eq s { color: var(--slab-dim); text-decoration-thickness: 2px; text-decoration-color: var(--gold); }
+.rule-eq .op { color: var(--slab-dim); }
+.rule-eq .times { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); border-radius: 6px; padding: 0 6px; }
+.rule-eq b { font-family: var(--font-display); font-weight: 800; color: var(--gold); }
 .rule p { margin: 0; font-size: 0.875rem; color: var(--muted); max-width: 62ch; }
 .rule p strong { color: var(--ink); }
 
@@ -356,12 +359,10 @@ footer { text-align: center; font-size: 0.75rem; color: var(--muted); }
 
   <section class="panel rule">
     <h2>The rule</h2>
-    <div class="rule-row">
-      <label for="rate">Drop 000, then ×</label>
-      <input id="rate" type="number" inputmode="decimal" step="0.1" min="1" max="10" value="4">
-      <button class="ghost" id="rate-reset" type="button">Back to ×4</button>
+    <div class="rule-eq" aria-label="100,000 dong: drop three zeros, times 4, equals 400 rupees">
+      <span>100.<s>000</s> ₫</span><span class="op">→</span><span>100</span><span class="times">× 4</span><span class="op">=</span><b>₹400</b>
     </div>
-    <p>The real rate in late October 2026 was about <strong>₹1 = 273 ₫</strong>, which works out to ×3.66. So ×4 runs about 9% high. That's a handy buffer: what you actually pay is usually a bit less than Dongg says.</p>
+    <p>Everyone uses the same ×4, so your numbers match when you compare. The real rate in late October 2026 was about <strong>₹1 = 273 ₫</strong>, which works out to ×3.66. So ×4 runs about 9% high. That's a handy buffer: what you actually pay is usually a bit less than Dongg says.</p>
   </section>
 
   <footer>Made for the Vietnam trip. Works offline once it has loaded.</footer>
@@ -371,7 +372,7 @@ footer { text-align: center; font-size: 0.75rem; color: var(--muted); }
 (function () {
   "use strict";
   var REAL_VND_PER_INR = 273; // late Oct 2026
-  var DEFAULT_RATE = 4;
+  var RATE = 4; // the group rule: drop 000, times 4. Fixed so everyone's numbers match.
 
   var NOTES = [
     { v: 1000, c: "--n1k" }, { v: 2000, c: "--n2k" }, { v: 5000, c: "--n5k" },
@@ -398,7 +399,8 @@ footer { text-align: center; font-size: 0.75rem; color: var(--muted); }
   };
 
   var mode = store.get("dongg.mode", "vnd") === "inr" ? "inr" : "vnd";
-  var rate = Number(store.get("dongg.rate", DEFAULT_RATE)) || DEFAULT_RATE;
+  var rate = RATE;
+  try { localStorage.removeItem("dongg.rate"); } catch (e) {}
   var log = store.get("dongg.log", []);
   if (!Array.isArray(log)) log = [];
   var current = { vnd: 0, inr: 0 };
@@ -536,12 +538,8 @@ footer { text-align: center; font-size: 0.75rem; color: var(--muted); }
       $("amt").value = String(now + n.v);
       render();
     });
-    b._small = sm; b._v = n.v;
     grid.appendChild(b);
   });
-  function refreshNoteLabels() {
-    Array.prototype.forEach.call(grid.children, function (b) { b._small.textContent = "= " + fmtInr(vndToInr(b._v)); });
-  }
 
   // ---------- cheat sheet ----------
   var refBody = $("ref-body");
@@ -642,16 +640,6 @@ footer { text-align: center; font-size: 0.75rem; color: var(--muted); }
   $("clear").addEventListener("touchend", function (e) { e.preventDefault(); this.click(); });
   $("mode-vnd").addEventListener("click", function () { if (mode !== "vnd") setMode("vnd"); });
   $("mode-inr").addEventListener("click", function () { if (mode !== "inr") setMode("inr"); });
-
-  function applyRate(v) {
-    var n = parseFloat(v);
-    if (!isFinite(n) || n <= 0) return;
-    rate = n; store.set("dongg.rate", rate);
-    render(); refreshNoteLabels(); renderRef(); renderLog();
-  }
-  $("rate").value = String(rate);
-  $("rate").addEventListener("input", function () { applyRate(this.value); });
-  $("rate-reset").addEventListener("click", function () { $("rate").value = String(DEFAULT_RATE); applyRate(DEFAULT_RATE); });
 
   // ---------- boot ----------
   renderRef();

@@ -13,7 +13,7 @@ A tiny dong → rupee converter for the Vietnam trip.
 - Flip to ₹ → ₫ to see how much dong a rupee budget gets you.
 - Spend log with a running total, saved on each phone.
 - Street price cheat sheet (phở, bánh mì, Grab bike, etc.).
-- The multiplier is adjustable. ×4 is about 9% above the real rate (₹1 ≈ 273 ₫, late Oct 2026), which makes a safe buffer.
+- The rule is fixed at ×4 so everyone's numbers match. ×4 is about 9% above the real rate (₹1 ≈ 273 ₫, late Oct 2026), which makes a safe buffer.
 - Installable to the home screen and works offline once loaded.
 
 ## Hosting on GitHub Pages
